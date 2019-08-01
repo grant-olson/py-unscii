@@ -23,12 +23,23 @@ def process_file(filename):
         unscii_bytes[unicode_entry] = hex_bytes
 
         transposed_bytes = [0 for _ in range(byte_count)]
-        for i in range(len(hex_bytes)):
+        for i in range(8):
             hex_line = hex_bytes[i]
             for j in range(8):
                 bit = hex_line & (1 << (7 -j))
                 if bit:
                     transposed_bytes[j] += 1 << i
+
+    
+        if len(hex_bytes) > 8: #Double height charset
+            for i in range(8):
+                hex_line = hex_bytes[i+8]
+                for j in range(8):
+                    bit = hex_line & (1 << (7 -j))
+                    if bit:
+                        transposed_bytes[j+8] += 1 << i
+
+            
         unscii_transposed_bytes[unicode_entry] = transposed_bytes
     just_filename = filename.split("/")[-1]
     just_filename_without_extension = just_filename[0:-4]
