@@ -11,12 +11,16 @@ class UnsciiFont(object):
             module = getattr(globals()['raw_unscii'], font_name)
             cached_fonts[font_name] = getattr(module, "%s_bytes" % font_name)
         self.raw_data = cached_fonts[font_name]
+        self.name = font_name
 
     def get_char(self, char):
         return self.raw_data[ord(char)] # Is this right for unicode?
 
     def size(self):
         return len(self.get_char("A")) / 8
+
+    def transposed(self):
+        return "_transposed" in self.name
     
 def unscii(font_name):
     """
