@@ -15,7 +15,7 @@ class UnsciiFont(object):
         self.raw_data = cached_fonts[font_name]
 
     def get_char(self, char):
-        return self.raw_data(ord(char)) # Is this right for unicode?
+        return self.raw_data[ord(char)] # Is this right for unicode?
         
 def unscii(font_name):
     return UnsciiFont(font_name)
