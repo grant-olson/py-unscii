@@ -16,6 +16,9 @@ class UnsciiFont(object):
         return self.raw_data[ord(char)] # Is this right for unicode?
         
 def unscii(font_name):
+    """
+    Given a font name, return a font object for usage.
+    """
     return UnsciiFont(font_name)
 
 def fonts():
