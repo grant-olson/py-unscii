@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="unscii",
-    version="0.1.0",
+    version="0.1.1",
     author="Grant T. Olson",
     author_email="kgo@grant-olson.net",
     description="Python Interface for UNSCII bitmapped fonts",
