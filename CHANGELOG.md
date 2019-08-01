@@ -1,3 +1,5 @@
+* UnsciiFont#size() method to detect double wide characters.
+
 * BUGFIX: Now includes all fonts in font list.
 
 0.1.0

@@ -14,7 +14,10 @@ class UnsciiFont(object):
 
     def get_char(self, char):
         return self.raw_data[ord(char)] # Is this right for unicode?
-        
+
+    def size(self):
+        return len(self.get_char("A")) / 8
+    
 def unscii(font_name):
     """
     Given a font name, return a font object for usage.
