@@ -17,3 +17,9 @@ class UnsciiFont(object):
         
 def unscii(font_name):
     return UnsciiFont(font_name)
+
+def fonts():
+    """
+    Provide list of installed unscii fonts that can be used.
+    """
+    return raw_unscii.raw_unscii_modules
