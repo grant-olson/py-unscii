@@ -1,5 +1,5 @@
 import importlib
-import raw_unscii
+from . import raw_unscii
 import glob
 
 cached_fonts = {}
