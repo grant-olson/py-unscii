@@ -35,7 +35,7 @@ def process_file(filename):
 
     python_friendly_name = just_filename_without_extension.replace("-", "_")
 
-    unscii_bytes_file = open("./artifacts/%s.py" % python_friendly_name, "w")
+    unscii_bytes_file = open("./unscii/raw_unscii/%s.py" % python_friendly_name, "w")
     unscii_bytes_file.write("# File generate by unscii.py. Not intended to be read or modified by humans.\n\n")
     unscii_bytes_file.write("%s_bytes = " % python_friendly_name)
     unscii_bytes_file.write(pprint.pformat(unscii_bytes))
@@ -46,7 +46,18 @@ def process_file(filename):
     unscii_bytes_file.write("# File generate by unscii.py. Not intended to be read or modified by humans.\n\n")
     unscii_bytes_file.write("%s_bytes = " % python_friendly_name)
     unscii_bytes_file.write(pprint.pformat(unscii_transposed_bytes))
+
+    return python_friendly_name
+
+def process_files():
+    python_filenames = []
+    for filename in glob.glob("./hexfiles/*.hex"):
+        python_filename = process_file(filename)
+        python_filenames.append(python_filename)
+
+    raw_unscii_init_file = open("./unscii/raw_unscii/__init__.py", "w")
+    raw_unscii_init_file.write("# File generate by unscii.py. Not intended to be read or modified by humans.\n\n")
+    raw_unscii_init_file.write("raw_unscii_modules = %s" % pprint.pformat(python_filenames))
     
 if __name__ == "__main__":
-    for filename in glob.glob("./hexfiles/*.hex"):
-        process_file(filename)
+    process_files()
