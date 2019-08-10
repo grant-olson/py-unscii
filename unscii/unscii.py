@@ -33,3 +33,17 @@ def fonts():
     Provide list of installed unscii fonts that can be used.
     """
     return raw_unscii.raw_unscii_modules
+
+class ResourceGenerator(object):
+    def __init__(self, font_name):
+        self.font = unscii(font_name)
+
+    def cpp_resource_string(self, resource_name, resource_text, line_size=None):
+        resource_declaration = "const byte %s[] = { \n" % resource_name
+        for c in resource_text:
+            for b in self.font.get_char(c):
+                resource_declaration += "0x%2X, " % b
+            resource_declaration += "// '%s'\n" % c
+        resource_declaration += "};\n"
+        
+        return resource_declaration
