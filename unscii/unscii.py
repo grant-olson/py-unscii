@@ -34,6 +34,67 @@ def fonts():
     """
     return raw_unscii.raw_unscii_modules
 
+cpp_driver_code = """
+#include <Wire.h>
+
+const byte OLED_DISPLAY_ADDRESS = 0x3C;
+
+const byte OLED_COMMAND = 0x00;
+const byte OLED_DATA = 0x40;
+
+const byte OLED_SET_MUX_RATIO = 0xA8;
+const byte OLED_SET_DISPLAY_OFFSET = 0xD3;
+const byte OLED_SET_DISPLAY_START_LINE = 0x40;
+const byte OLED_SET_SEGMENT_REMAP_0 = 0xA0;
+const byte OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT = 0xC0;
+const byte OLED_SET_COM_PINS = 0xDA;
+const byte OLED_SET_CONTRAST = 0x81;
+const byte OLED_ENTIRE_DISPLAY_ON = 0xA5;
+const byte OLED_NORMAL_DISPLAY = 0xA6;
+const byte OLED_ENABLE_CHARGE_PUMP_REGULATOR = 0x8D;
+const byte OLED_DISPLAY_ON = 0xAF;
+const byte OLED_SET_MEMORY_ADDRESSING_MODE = 0x20;
+const byte OLED_OUTPUT_RAM = 0xA4;
+
+  const byte oled_init_sequence[] = {  
+  OLED_SET_MUX_RATIO, 0x3f,
+  OLED_SET_DISPLAY_OFFSET, 0x00,
+  OLED_SET_DISPLAY_START_LINE,
+  OLED_SET_SEGMENT_REMAP_0,
+  OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT,
+  OLED_SET_COM_PINS, 0x02,
+  OLED_SET_CONTRAST, 0x7f,
+  OLED_ENTIRE_DISPLAY_ON,
+  OLED_OUTPUT_RAM,
+  OLED_NORMAL_DISPLAY,
+   
+  OLED_ENABLE_CHARGE_PUMP_REGULATOR, 0x14,
+  OLED_DISPLAY_ON,
+  OLED_SET_MEMORY_ADDRESSING_MODE, 0x02
+};
+
+void oled_send_command(byte cmd) {
+  Wire.beginTransmission(OLED_DISPLAY_ADDRESS);
+  Wire.write(OLED_COMMAND);
+  Wire.write(cmd);
+  Wire.endTransmission();
+}
+void oled_send_data(byte data) {
+  Wire.beginTransmission(OLED_DISPLAY_ADDRESS);
+  Wire.write(OLED_DATA);
+  Wire.write(data);
+  Wire.endTransmission();
+
+}
+
+
+void oled_initialization_sequence() {
+  for(int i=0;i<sizeof(oled_init_sequence);i++) {
+    oled_send_command(oled_init_sequence[i]);
+  }  
+}
+"""
+
 class ResourceGenerator(object):
     def __init__(self, font_name):
         self.font = unscii(font_name)
