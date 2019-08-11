@@ -11,6 +11,8 @@ void setup() {
 void loop() {
   oled_send_command(OLED_OUTPUT_RAM);
 
+  oled_clear();
+  
   oled_set_page(0);
   oled_set_column(0);
   oled_print_you_died();
@@ -70,4 +72,6 @@ void loop() {
   oled_print_game_over();
 
   delay(5000);
+
+  
 }
