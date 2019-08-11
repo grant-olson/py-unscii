@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import unscii
+from sys import argv
+from yaml import safe_load
+import os.path
+
+in_file = argv[1]
+print("Loading %s" % in_file)
+config = safe_load(open(in_file))
+
+
+rg = unscii.ResourceGenerator(config['font'])
+print(repr(config))
+
+strings = []
+helper_descs = []
+helpers = []
+
+for k,v in config["resources"].items():
+    resource_info = rg.cpp_resources(k,v)
+    strings.append(resource_info['string'])
+    helper_descs.append(resource_info['helper_declaration'])
+    helpers.append(resource_info['helper_function'])
+
+base_name = os.path.splitext(in_file)[0]
+
+header_file = open(base_name + ".h", "w")
+
+print("Emitting %s..." % header_file)
+header_file.write(rg.cpp_header_intro())
+for s in strings:
+    header_file.write(s)
+header_file.write("\n")
+for hd in helper_descs:
+    header_file.write(hd)
+header_file.write("\n")
+header_file.write("#endif")
+
+cpp_file = open(base_name + ".cpp", "w")
+print("Emitting %s..." % cpp_file)
+
+cpp_file.write("#include \"%s.h\"" % os.path.split(base_name)[-1])
+cpp_file.write(rg.cpp_intro())
+
+for helper in helpers:
+    cpp_file.write(helper)

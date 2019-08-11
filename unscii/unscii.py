@@ -34,29 +34,42 @@ def fonts():
     """
     return raw_unscii.raw_unscii_modules
 
-cpp_driver_code = """
+cpp_header_file = """
+#ifndef OLED_CONTROL
+#define OLED_CONTROL
+
+const char OLED_DISPLAY_ADDRESS = 0x3C;
+
+const char OLED_COMMAND = 0x00;
+const char OLED_DATA = 0x40;
+
+const char OLED_SET_MUX_RATIO = 0xA8;
+const char OLED_SET_DISPLAY_OFFSET = 0xD3;
+const char OLED_SET_DISPLAY_START_LINE = 0x40;
+const char OLED_SET_SEGMENT_REMAP_0 = 0xA0;
+const char OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT = 0xC0;
+const char OLED_SET_COM_PINS = 0xDA;
+const char OLED_SET_CONTRAST = 0x81;
+const char OLED_ENTIRE_DISPLAY_ON = 0xA5;
+const char OLED_NORMAL_DISPLAY = 0xA6;
+const char OLED_ENABLE_CHARGE_PUMP_REGULATOR = 0x8D;
+const char OLED_DISPLAY_ON = 0xAF;
+const char OLED_SET_MEMORY_ADDRESSING_MODE = 0x20;
+const char OLED_OUTPUT_RAM = 0xA4;
+
+void oled_send_command(char cmd);
+void oled_send_data(char data);
+void oled_initialization_sequence();
+void oled_set_page(char page);
+void oled_set_column(char column);
+void oled_clear();
+
+"""
+
+cpp_file = """
 #include <Wire.h>
 
-const byte OLED_DISPLAY_ADDRESS = 0x3C;
-
-const byte OLED_COMMAND = 0x00;
-const byte OLED_DATA = 0x40;
-
-const byte OLED_SET_MUX_RATIO = 0xA8;
-const byte OLED_SET_DISPLAY_OFFSET = 0xD3;
-const byte OLED_SET_DISPLAY_START_LINE = 0x40;
-const byte OLED_SET_SEGMENT_REMAP_0 = 0xA0;
-const byte OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT = 0xC0;
-const byte OLED_SET_COM_PINS = 0xDA;
-const byte OLED_SET_CONTRAST = 0x81;
-const byte OLED_ENTIRE_DISPLAY_ON = 0xA5;
-const byte OLED_NORMAL_DISPLAY = 0xA6;
-const byte OLED_ENABLE_CHARGE_PUMP_REGULATOR = 0x8D;
-const byte OLED_DISPLAY_ON = 0xAF;
-const byte OLED_SET_MEMORY_ADDRESSING_MODE = 0x20;
-const byte OLED_OUTPUT_RAM = 0xA4;
-
-  const byte oled_init_sequence[] = {  
+const char oled_init_sequence[] = {  
   OLED_SET_MUX_RATIO, 0x3f,
   OLED_SET_DISPLAY_OFFSET, 0x00,
   OLED_SET_DISPLAY_START_LINE,
@@ -73,13 +86,13 @@ const byte OLED_OUTPUT_RAM = 0xA4;
   OLED_SET_MEMORY_ADDRESSING_MODE, 0x02
 };
 
-void oled_send_command(byte cmd) {
+void oled_send_command(char cmd) {
   Wire.beginTransmission(OLED_DISPLAY_ADDRESS);
   Wire.write(OLED_COMMAND);
   Wire.write(cmd);
   Wire.endTransmission();
 }
-void oled_send_data(byte data) {
+void oled_send_data(char data) {
   Wire.beginTransmission(OLED_DISPLAY_ADDRESS);
   Wire.write(OLED_DATA);
   Wire.write(data);
@@ -87,24 +100,77 @@ void oled_send_data(byte data) {
 
 }
 
-
 void oled_initialization_sequence() {
+  Wire.begin();
+
   for(int i=0;i<sizeof(oled_init_sequence);i++) {
     oled_send_command(oled_init_sequence[i]);
   }  
 }
+
+void oled_set_page(char page) {
+  oled_send_command(0xB0 | page);
+}
+
+void oled_set_column(char column) {
+  char high_nibble = (column & 0xF0) >> 4;
+  char low_nibble = column & 0x0F;
+
+
+  oled_send_command(low_nibble);
+  oled_send_command(high_nibble | 0x10);
+}
+
+void oled_print_resource(const char data[], int size) {
+  for(int i=0;i<size;i++) {
+    oled_send_data(data[i]);
+  };
+}
+
+void oled_clear() {
+  for(int i=0;i<8;i++) {
+    oled_set_page(i);
+    oled_set_column(0);
+    for(int j=0;j<128;j++) {
+      oled_send_data(0x0);
+    };
+  };
+}
+
 """
 
 class ResourceGenerator(object):
     def __init__(self, font_name):
         self.font = unscii(font_name)
 
+    def cpp_header_intro(self):
+        return cpp_header_file
+
+    def cpp_intro(self):
+        return cpp_file
+    
     def cpp_resource_string(self, resource_name, resource_text, line_size=None):
-        resource_declaration = "const byte %s[] = { \n" % resource_name
+        resource_declaration = "const char %s[] = { \n" % resource_name
         for c in resource_text:
             for b in self.font.get_char(c):
-                resource_declaration += "0x%2X, " % b
+                resource_declaration += "0x%02X, " % b
             resource_declaration += "// '%s'\n" % c
         resource_declaration += "};\n"
         
         return resource_declaration
+
+    def cpp_resource_helper(self, resource_name, header=True):
+        signature = "void oled_print_%s()" % resource_name.lower()
+        if header:
+            return signature + ";\n"
+        else:
+            function = signature + " {\n"
+            function += "    oled_print_resource(%s,sizeof(%s));\n}\n" % (resource_name, resource_name)
+            return function
+                
+    def cpp_resources(self, resource_name, resource_text):
+        resources = {}
+        resources["string"] = self.cpp_resource_string(resource_name, resource_text)
+        resources["helper_declaration"] = self.cpp_resource_helper(resource_name)
+        resources["helper_function"] = self.cpp_resource_helper(resource_name, header=False)
+        return resources

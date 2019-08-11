@@ -1,0 +1,17 @@
+font: unscii_8_mcr_transposed
+resources:
+  YOU_DIED: "You Died!"
+  PLAY_AGAIN: "Another Game?"
+  "YES": "Y"
+  "NO": "N"
+  TEN: "10"
+  NINE: " 9"
+  EIGHT: " 8"
+  SEVEN: " 7"
+  SIX: " 6"
+  FIVE: " 5"
+  FOUR: " 4"
+  THREE: " 3"
+  TWO: " 2"
+  ONE: " 1"
+  GAME_OVER: "GAME OVER!!!"
