@@ -38,30 +38,32 @@ cpp_header_file = """
 #ifndef OLED_CONTROL
 #define OLED_CONTROL
 
-const char OLED_DISPLAY_ADDRESS = 0x3C;
+#include <Arduino.h>
 
-const char OLED_COMMAND = 0x00;
-const char OLED_DATA = 0x40;
+const byte OLED_DISPLAY_ADDRESS = 0x3C;
 
-const char OLED_SET_MUX_RATIO = 0xA8;
-const char OLED_SET_DISPLAY_OFFSET = 0xD3;
-const char OLED_SET_DISPLAY_START_LINE = 0x40;
-const char OLED_SET_SEGMENT_REMAP_0 = 0xA0;
-const char OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT = 0xC0;
-const char OLED_SET_COM_PINS = 0xDA;
-const char OLED_SET_CONTRAST = 0x81;
-const char OLED_ENTIRE_DISPLAY_ON = 0xA5;
-const char OLED_NORMAL_DISPLAY = 0xA6;
-const char OLED_ENABLE_CHARGE_PUMP_REGULATOR = 0x8D;
-const char OLED_DISPLAY_ON = 0xAF;
-const char OLED_SET_MEMORY_ADDRESSING_MODE = 0x20;
-const char OLED_OUTPUT_RAM = 0xA4;
+const byte OLED_COMMAND = 0x00;
+const byte OLED_DATA = 0x40;
 
-void oled_send_command(char cmd);
-void oled_send_data(char data);
+const byte OLED_SET_MUX_RATIO = 0xA8;
+const byte OLED_SET_DISPLAY_OFFSET = 0xD3;
+const byte OLED_SET_DISPLAY_START_LINE = 0x40;
+const byte OLED_SET_SEGMENT_REMAP_0 = 0xA0;
+const byte OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT = 0xC0;
+const byte OLED_SET_COM_PINS = 0xDA;
+const byte OLED_SET_CONTRAST = 0x81;
+const byte OLED_ENTIRE_DISPLAY_ON = 0xA5;
+const byte OLED_NORMAL_DISPLAY = 0xA6;
+const byte OLED_ENABLE_BYTEGE_PUMP_REGULATOR = 0x8D;
+const byte OLED_DISPLAY_ON = 0xAF;
+const byte OLED_SET_MEMORY_ADDRESSING_MODE = 0x20;
+const byte OLED_OUTPUT_RAM = 0xA4;
+
+void oled_send_command(byte cmd);
+void oled_send_data(byte data);
 void oled_initialization_sequence();
-void oled_set_page(char page);
-void oled_set_column(char column);
+void oled_set_page(byte page);
+void oled_set_column(byte column);
 void oled_clear();
 
 """
@@ -69,7 +71,7 @@ void oled_clear();
 cpp_file = """
 #include <Wire.h>
 
-const char oled_init_sequence[] = {  
+const byte oled_init_sequence[] = {  
   OLED_SET_MUX_RATIO, 0x3f,
   OLED_SET_DISPLAY_OFFSET, 0x00,
   OLED_SET_DISPLAY_START_LINE,
@@ -81,18 +83,18 @@ const char oled_init_sequence[] = {
   OLED_OUTPUT_RAM,
   OLED_NORMAL_DISPLAY,
    
-  OLED_ENABLE_CHARGE_PUMP_REGULATOR, 0x14,
+  OLED_ENABLE_BYTEGE_PUMP_REGULATOR, 0x14,
   OLED_DISPLAY_ON,
   OLED_SET_MEMORY_ADDRESSING_MODE, 0x02
 };
 
-void oled_send_command(char cmd) {
+void oled_send_command(byte cmd) {
   Wire.beginTransmission(OLED_DISPLAY_ADDRESS);
   Wire.write(OLED_COMMAND);
   Wire.write(cmd);
   Wire.endTransmission();
 }
-void oled_send_data(char data) {
+void oled_send_data(byte data) {
   Wire.beginTransmission(OLED_DISPLAY_ADDRESS);
   Wire.write(OLED_DATA);
   Wire.write(data);
@@ -108,20 +110,20 @@ void oled_initialization_sequence() {
   }  
 }
 
-void oled_set_page(char page) {
+void oled_set_page(byte page) {
   oled_send_command(0xB0 | page);
 }
 
-void oled_set_column(char column) {
-  char high_nibble = (column & 0xF0) >> 4;
-  char low_nibble = column & 0x0F;
+void oled_set_column(byte column) {
+  byte high_nibble = (column & 0xF0) >> 4;
+  byte low_nibble = column & 0x0F;
 
 
   oled_send_command(low_nibble);
   oled_send_command(high_nibble | 0x10);
 }
 
-void oled_print_resource(const char data[], int size) {
+void oled_print_resource(const byte data[], int size) {
   for(int i=0;i<size;i++) {
     oled_send_data(data[i]);
   };
@@ -150,7 +152,7 @@ class ResourceGenerator(object):
         return cpp_file
     
     def cpp_resource_string(self, resource_name, resource_text, line_size=None):
-        resource_declaration = "const char %s[] = { \n" % resource_name
+        resource_declaration = "const byte %s[] = { \n" % resource_name
         for c in resource_text:
             for b in self.font.get_char(c):
                 resource_declaration += "0x%02X, " % b
