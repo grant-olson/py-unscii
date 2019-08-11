@@ -1,3 +1,5 @@
+* CLI utility for lightweight Arduino OLED usage.
+
 0.1.1
 =====
 
