@@ -40,24 +40,24 @@ cpp_header_file = """
 
 #include <Arduino.h>
 
-const byte OLED_DISPLAY_ADDRESS = 0x3C;
+#define OLED_DISPLAY_ADDRESS 0x3C
 
-const byte OLED_COMMAND = 0x00;
-const byte OLED_DATA = 0x40;
+#define OLED_COMMAND 0x00
+#define OLED_DATA 0x40
 
-const byte OLED_SET_MUX_RATIO = 0xA8;
-const byte OLED_SET_DISPLAY_OFFSET = 0xD3;
-const byte OLED_SET_DISPLAY_START_LINE = 0x40;
-const byte OLED_SET_SEGMENT_REMAP_0 = 0xA0;
-const byte OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT = 0xC0;
-const byte OLED_SET_COM_PINS = 0xDA;
-const byte OLED_SET_CONTRAST = 0x81;
-const byte OLED_ENTIRE_DISPLAY_ON = 0xA5;
-const byte OLED_NORMAL_DISPLAY = 0xA6;
-const byte OLED_ENABLE_BYTEGE_PUMP_REGULATOR = 0x8D;
-const byte OLED_DISPLAY_ON = 0xAF;
-const byte OLED_SET_MEMORY_ADDRESSING_MODE = 0x20;
-const byte OLED_OUTPUT_RAM = 0xA4;
+#define OLED_SET_MUX_RATIO 0xA8
+#define OLED_SET_DISPLAY_OFFSET 0xD3
+#define OLED_SET_DISPLAY_START_LINE 0x40
+#define OLED_SET_SEGMENT_REMAP_0 0xA0
+#define OLED_SET_COM_OUTPUT_SCAN_DIRECTION_INCREMENT 0xC0
+#define OLED_SET_COM_PINS 0xDA
+#define OLED_SET_CONTRAST 0x81
+#define OLED_ENTIRE_DISPLAY_ON 0xA5
+#define OLED_NORMAL_DISPLAY 0xA6
+#define OLED_ENABLE_BYTEGE_PUMP_REGULATOR 0x8D
+#define OLED_DISPLAY_ON 0xAF
+#define OLED_SET_MEMORY_ADDRESSING_MODE 0x20
+#define OLED_OUTPUT_RAM 0xA4
 
 void oled_send_command(byte cmd);
 void oled_send_data(byte data);
@@ -65,7 +65,7 @@ void oled_initialization_sequence();
 void oled_set_page(byte page);
 void oled_set_column(byte column);
 void oled_clear();
-
+void oled_print_resource(const char s[]);
 """
 
 cpp_file = """
@@ -123,11 +123,16 @@ void oled_set_column(byte column) {
   oled_send_command(high_nibble | 0x10);
 }
 
-void oled_print_resource(const byte data[], int size) {
-  for(int i=0;i<size;i++) {
-    oled_send_data(data[i]);
+void oled_print_resource(const char s[]) {
+  for(int i=0;i<strlen(s);i++) {
+    char c = s[i];
+    int map_position = oled_letter_map[(int)c - OLED_FIRST_LETTER] - 1; // ONE INDEXED SO WE CAN USE 0 AS NULL
+    const byte* ld = oled_letter_data[map_position];
+    for(int j=0;j<8;j++){
+      oled_send_data(ld[j]);
+    }
   };
-}
+};
 
 void oled_clear() {
   for(int i=0;i<8;i++) {
@@ -150,15 +155,43 @@ class ResourceGenerator(object):
 
     def cpp_intro(self):
         return cpp_file
-    
-    def cpp_resource_string(self, resource_name, resource_text, line_size=None):
-        resource_declaration = "const byte %s[] = { \n" % resource_name
-        for c in resource_text:
-            for b in self.font.get_char(c):
-                resource_declaration += "0x%02X, " % b
-            resource_declaration += "// '%s'\n" % c
-        resource_declaration += "};\n"
+
+    def cpp_letter_map(self, resources):
+        letters = []
+        for k,v in resources.items():
+            for c in v:
+                if c not in letters:
+                    letters.append(c)
+
+        if "?" not in letters:
+            letters.append("?")
+            
+        letters.sort()
+
+        earliest_letter = ord(letters[0])
+        last_letter = ord(letters[-1])
+
+        letter_size = last_letter - earliest_letter
+
+        letter_map = [0] * (letter_size + 1)
+
+        letter_data = []
+
+        for index, letter in enumerate(letters):
+            letter_map[ord(letter) - earliest_letter] = index + 1
+            letter_data.append(self.font.get_char(letter))
+
+        cpp_letter_constants = "#define OLED_FIRST_LETTER %i\n#define OLED_LAST_LETTER %i\n\n" % (earliest_letter, last_letter)
+        cpp_letter_map = "const byte oled_letter_map[] = {%s};" % ", ".join([str(x) for x in letter_map])
+        cpp_letter_data = "const byte oled_letter_data[%d][8] = {\n" % len(letter_data)
+        for ld in letter_data:
+            cpp_letter_data += "  {%s},\n" % ", ".join(["0x%02x" % x for x in ld])
+        cpp_letter_data += "};"
+        return cpp_letter_constants + cpp_letter_map + "\n\n" + cpp_letter_data
         
+    def cpp_resource_string(self, resource_name, resource_text, line_size=None):
+        resource_declaration = "const char OLED_%s[] = \"%s\";\n" % (resource_name, resource_text.replace('"','\"'))
+     
         return resource_declaration
 
     def cpp_resource_helper(self, resource_name, header=True):

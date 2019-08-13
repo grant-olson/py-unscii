@@ -17,11 +17,11 @@ strings = []
 helper_descs = []
 helpers = []
 
+letter_maps = rg.cpp_letter_map(config['resources'])
+
 for k,v in config["resources"].items():
     resource_info = rg.cpp_resources(k,v)
     strings.append(resource_info['string'])
-    helper_descs.append(resource_info['helper_declaration'])
-    helpers.append(resource_info['helper_function'])
 
 base_name = os.path.splitext(in_file)[0]
 
@@ -29,11 +29,11 @@ header_file = open(base_name + ".h", "w")
 
 print("Emitting %s..." % header_file)
 header_file.write(rg.cpp_header_intro())
+
+header_file.write(letter_maps);
+
 for s in strings:
     header_file.write(s)
-header_file.write("\n")
-for hd in helper_descs:
-    header_file.write(hd)
 header_file.write("\n")
 header_file.write("#endif")
 
